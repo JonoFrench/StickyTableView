@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ViewController: UIViewController,UITableViewDelegate, UIScrollViewDelegate {
+class ViewController: UIViewController,UITableViewDelegate {
     
     @IBOutlet weak var tblSticky: UITableView!
     
@@ -22,6 +22,7 @@ class ViewController: UIViewController,UITableViewDelegate, UIScrollViewDelegate
     var myRank : Int = 20 // Position on the sticky cell
     var myRowHeight: CGFloat = 70
     var myRankPos : CGFloat?
+    private var tableObserver: NSKeyValueObservation?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,6 +35,9 @@ class ViewController: UIViewController,UITableViewDelegate, UIScrollViewDelegate
         tblSticky.tableFooterView = nil
         tblSticky.allowsSelection = false
         tblSticky.separatorStyle = .none
+        tableObserver = tblSticky.layer.observe(\.bounds) { object, _ in
+            self.setMyPosView(y: self.tblSticky.contentOffset.y)
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -47,15 +51,14 @@ class ViewController: UIViewController,UITableViewDelegate, UIScrollViewDelegate
         SetMyPos()
     }
     
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        setMyPosView(y: scrollView.contentOffset.y)
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        tableObserver?.invalidate()
     }
     
     private func setMyPosView (y : CGFloat)
     {
         if let myPosView = myPosView, let myRankPos = myRankPos, var myPos = myPos, var myPoint = myPoint {
-            print(" myPos \(myPos) y \(y)")
-
             var yPos = y
             if yPos < 0 { yPos = 0 }
             let tableHeight = tblSticky.frame.height
@@ -68,11 +71,9 @@ class ViewController: UIViewController,UITableViewDelegate, UIScrollViewDelegate
             if (yPos >= myRankPos) {
                 myPoint.y = yPos;
                 myPosView.isHidden = false
-                print("Top")
             } else if (yPos + tableHeight - myRowHeight <= myRankPos) {
                 myPoint.y = yPos + tableHeight - myRowHeight
                 myPosView.isHidden = false
-                print("Bottom \(yPos)")
             } else {
                 //hide it as it's already on the screen
                 myPosView.isHidden = true
@@ -80,7 +81,6 @@ class ViewController: UIViewController,UITableViewDelegate, UIScrollViewDelegate
             myPos.origin = myPoint
             myPosView.frame = myPos
         } else {
-            print("set my pos from PV")
             SetMyPos ();
         }
     }
